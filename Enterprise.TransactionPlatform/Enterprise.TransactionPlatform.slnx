@@ -11,6 +11,8 @@
     <Project Path="Enterprise.TransactionPlatform.Infrastructure/Enterprise.TransactionPlatform.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="Enterprise.TransactionPlatform.Application.Tests/Enterprise.TransactionPlatform.Application.Tests.csproj" Id="237a33a8-5476-4232-93e8-ce07f56172e7" />
     <Project Path="Enterprise.TransactionPlatform.Domain.Tests/Enterprise.TransactionPlatform.Domain.Tests.csproj" />
+    <Project Path="Enterprise.TransactionPlatform.Infrastructure.Tests/Enterprise.TransactionPlatform.Infrastructure.Tests.csproj" Id="f6a16e0f-6d9f-4cba-907d-24fdb8d11f1f" />
   </Folder>
 </Solution>
