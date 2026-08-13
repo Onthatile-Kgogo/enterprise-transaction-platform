@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="Enterprise.TransactionPlatform.Api/Enterprise.TransactionPlatform.Api.csproj" />
+    <Project Path="Enterprise.TransactionPlatform.Application/Enterprise.TransactionPlatform.Application.csproj" />
+    <Project Path="Enterprise.TransactionPlatform.Contracts/Enterprise.TransactionPlatform.Contracts.csproj" />
+    <Project Path="Enterprise.TransactionPlatform.Domain/Enterprise.TransactionPlatform.Domain.csproj" />
+    <Project Path="Enterprise.TransactionPlatform.Infrastructure/Enterprise.TransactionPlatform.Infrastructure.csproj" />
+  </Folder>
+</Solution>
