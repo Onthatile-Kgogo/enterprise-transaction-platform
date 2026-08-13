@@ -1,5 +1,7 @@
 using Enterprise.TransactionPlatform.Application.Abstractions.Currencies;
+using Enterprise.TransactionPlatform.Application.DependencyInjection;
 using Enterprise.TransactionPlatform.Infrastructure.Currencies;
+using Enterprise.TransactionPlatform.Infrastructure.DependencyInjection;
 
 namespace Enterprise.TransactionPlatform.Api
 {
@@ -25,7 +27,10 @@ namespace Enterprise.TransactionPlatform.Api
             builder.Services.AddControllers();
             builder.Services.AddOpenApi();
 
-            
+            builder.Services.AddApplication();
+            builder.Services.AddInfrastructure(builder.Configuration);
+
+
 
             builder.Services.AddSingleton<ISupportedCurrencyProvider, SupportedCurrencyProvider>();
 
