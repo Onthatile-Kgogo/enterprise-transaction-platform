@@ -1,5 +1,7 @@
 ﻿using Dapper;
 using Enterprise.TransactionPlatform.Application.Abstractions.Persistence;
+using Enterprise.TransactionPlatform.Application.Transactions.GetById;
+using Enterprise.TransactionPlatform.Application.Transactions.GetByReference;
 using Enterprise.TransactionPlatform.Domain.Entities;
 using Enterprise.TransactionPlatform.Domain.Enums;
 using Enterprise.TransactionPlatform.Domain.ValueObjects;
@@ -95,6 +97,173 @@ namespace Enterprise.TransactionPlatform.Infrastructure.Tests.Persistence
                     transaction.TransactionId
                 });
             }
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_WhenTransactionExists_ShouldReturnTransaction()
+        {
+            // Arrange
+            var configuration = new ConfigurationBuilder()
+                 .AddInMemoryCollection(new Dictionary<string, string?>
+                 {
+                     ["ConnectionStrings:EnterpriseTransactionPlatform"] = ConnectionString
+                 })
+                .Build();
+
+            var services = new ServiceCollection();
+            services.AddInfrastructure(configuration);
+
+            await using var serviceProvider = services.BuildServiceProvider();
+            var repository = serviceProvider.GetRequiredService<ITransactionRepository>();
+
+            var referenceValue = $"TEST-{Guid.NewGuid():N}";
+            var reference = TransactionReference.Create(referenceValue);
+            var currency = Currency.Create("ZAR");
+            var money = Money.Create(100m, currency);
+
+            var transaction = Transaction.Create(reference, money, TransactionType.Payment, "Query test transaction");
+
+            try
+            {
+                await repository.AddAsync(transaction);
+
+                // Act
+                var result = await repository.GetByIdAsync(transaction.TransactionId);
+
+                // Assert
+                Assert.NotNull(result);
+                Assert.Equal(transaction.TransactionId, result.TransactionId);
+                Assert.Equal(transaction.Reference.Value, result.Reference.Value);
+                Assert.Equal(transaction.Money.Amount, result.Money.Amount);
+                Assert.Equal(transaction.Money.Currency.Code, result.Money.Currency.Code);
+                Assert.Equal(transaction.Type, result.Type);
+                Assert.Equal(transaction.Status, result.Status);
+            }
+            finally
+            {
+                await using var cleanupConnection = new SqlConnection(ConnectionString);
+                await cleanupConnection.OpenAsync();
+
+                const string deleteSql =
+                    """
+                        DELETE FROM dbo.Transactions
+                        WHERE TransactionId = @TransactionId;
+                    """;
+
+                await cleanupConnection.ExecuteAsync(deleteSql, new
+                {
+                    transaction.TransactionId
+                });
+            }
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_WhenTransactionDoesNotExist_ShouldReturnNull()
+        {
+            // Arrange
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:EnterpriseTransactionPlatform"] =
+                        ConnectionString
+                })
+                .Build();
+
+            var services = new ServiceCollection();
+            services.AddInfrastructure(configuration);
+
+            await using var serviceProvider = services.BuildServiceProvider();
+            var repository = serviceProvider.GetRequiredService<ITransactionRepository>();
+
+            // Act
+            var result = await repository.GetByIdAsync(Guid.NewGuid());
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetByReferenceAsync_WhenTransactionExists_ShouldReturnTransaction()
+        {
+            // Arrange
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:EnterpriseTransactionPlatform"] =
+                        ConnectionString
+                })
+                .Build();
+
+            var services = new ServiceCollection();
+            services.AddInfrastructure(configuration);
+
+            await using var serviceProvider = services.BuildServiceProvider();
+
+            var repository = serviceProvider.GetRequiredService<ITransactionRepository>();
+
+            var referenceValue = $"TEST-{Guid.NewGuid():N}";
+            var reference = TransactionReference.Create(referenceValue);
+            var currency = Currency.Create("ZAR");
+            var money = Money.Create(100m, currency);
+
+            var transaction = Transaction.Create(reference, money, TransactionType.Payment, "Reference query test");
+
+            try
+            {
+                await repository.AddAsync(transaction);
+
+                // Act
+                var result = await repository.GetByReferenceAsync(referenceValue);
+
+                // Assert
+                Assert.NotNull(result);
+                Assert.Equal(transaction.TransactionId, result.TransactionId);
+                Assert.Equal(transaction.Reference.Value, result.Reference.Value);
+                Assert.Equal(transaction.Money.Amount, result.Money.Amount);
+                Assert.Equal(transaction.Money.Currency.Code, result.Money.Currency.Code);
+                Assert.Equal(transaction.Type, result.Type);
+                Assert.Equal(transaction.Status, result.Status);
+            }
+            finally
+            {
+                await using var cleanupConnection = new SqlConnection(ConnectionString);
+                await cleanupConnection.OpenAsync();
+
+                const string deleteSql =
+                    """
+                        DELETE FROM dbo.Transactions
+                        WHERE TransactionId = @TransactionId;
+                    """;
+
+                await cleanupConnection.ExecuteAsync(deleteSql, new
+                {
+                    transaction.TransactionId
+                });
+            }
+        }
+
+        [Fact]
+        public async Task GetByReferenceAsync_WhenTransactionDoesNotExist_ShouldReturnNull()
+        {
+            // Arrange
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:EnterpriseTransactionPlatform"] = ConnectionString
+                })
+                .Build();
+
+            var services = new ServiceCollection();
+            services.AddInfrastructure(configuration);
+
+            await using var serviceProvider = services.BuildServiceProvider();
+            var repository = serviceProvider.GetRequiredService<ITransactionRepository>();
+
+            // Act
+            var result = await repository.GetByReferenceAsync($"MISSING-{Guid.NewGuid():N}");
+
+            // Assert
+            Assert.Null(result);
         }
 
         private sealed class TransactionRow

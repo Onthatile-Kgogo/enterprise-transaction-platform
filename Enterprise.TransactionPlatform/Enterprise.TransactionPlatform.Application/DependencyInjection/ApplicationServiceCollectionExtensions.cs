@@ -1,4 +1,6 @@
 ﻿using Enterprise.TransactionPlatform.Application.Currencies;
+using Enterprise.TransactionPlatform.Application.Transactions.GetById;
+using Enterprise.TransactionPlatform.Application.Transactions.GetByReference;
 using Enterprise.TransactionPlatform.Application.Transactions.Submit;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,6 +14,8 @@ namespace Enterprise.TransactionPlatform.Application.DependencyInjection
 
             services.AddScoped<CurrencyValidator>();
             services.AddScoped<SubmitTransactionHandler>();
+            services.AddScoped<GetTransactionByIdHandler>();
+            services.AddScoped<GetTransactionByReferenceHandler>();
 
             return services;
         }

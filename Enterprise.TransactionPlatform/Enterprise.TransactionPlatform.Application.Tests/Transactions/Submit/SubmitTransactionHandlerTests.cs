@@ -86,8 +86,7 @@ namespace Enterprise.TransactionPlatform.Application.Tests.Transactions.Submit
         [InlineData(0)]
         [InlineData(-1)]
         [InlineData(-100)]
-        public async Task HandleAsync_WithInvalidAmount_ShouldReturnFailure(
-            decimal amount)
+        public async Task HandleAsync_WithInvalidAmount_ShouldReturnFailure(decimal amount)
         {
             // Arrange
             var provider = new TestSupportedCurrencyProvider("ZAR");
@@ -109,8 +108,7 @@ namespace Enterprise.TransactionPlatform.Application.Tests.Transactions.Submit
         [Theory]
         [InlineData("")]
         [InlineData(" ")]
-        public async Task HandleAsync_WithInvalidReference_ShouldReturnFailure(
-            string reference)
+        public async Task HandleAsync_WithInvalidReference_ShouldReturnFailure(string reference)
         {
             // Arrange
             var provider = new TestSupportedCurrencyProvider("ZAR");
@@ -215,6 +213,14 @@ namespace Enterprise.TransactionPlatform.Application.Tests.Transactions.Submit
             {
                 SavedTransaction = transaction;
                 return Task.CompletedTask;
+            }
+            public Task<Transaction?> GetByIdAsync(Guid transactionId, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<Transaction?>(null);
+            }
+            public Task<Transaction?> GetByReferenceAsync(string reference, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<Transaction?>(null);
             }
         }
     }
