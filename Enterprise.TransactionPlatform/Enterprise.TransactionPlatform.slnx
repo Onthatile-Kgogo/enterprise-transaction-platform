@@ -1,4 +1,13 @@
 <Solution>
+  <Folder Name="/database/">
+    <File Path="CreateDatabase.sql" />
+  </Folder>
+  <Folder Name="/database/StoredProcedures/">
+    <File Path="sp_CreateTransaction.sql" />
+  </Folder>
+  <Folder Name="/database/Tables/">
+    <File Path="Transactions.sql" />
+  </Folder>
   <Folder Name="/docs/" />
   <Folder Name="/docs/architecture/">
     <File Path="solution-architecture.md" />

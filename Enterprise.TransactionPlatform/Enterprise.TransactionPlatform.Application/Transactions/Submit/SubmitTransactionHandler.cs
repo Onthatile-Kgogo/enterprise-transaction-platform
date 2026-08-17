@@ -1,19 +1,24 @@
-﻿using Enterprise.TransactionPlatform.Application.Common.Results;
+﻿using Enterprise.TransactionPlatform.Application.Abstractions.Persistence;
+using Enterprise.TransactionPlatform.Application.Common.Results;
 using Enterprise.TransactionPlatform.Application.Currencies;
 using Enterprise.TransactionPlatform.Domain.Entities;
 using Enterprise.TransactionPlatform.Domain.ValueObjects;
 
 namespace Enterprise.TransactionPlatform.Application.Transactions.Submit
 {
+
     public sealed class SubmitTransactionHandler
     {
         private readonly CurrencyValidator _currencyValidator;
+        private readonly ITransactionRepository _transactionRepository;
 
-        public SubmitTransactionHandler(CurrencyValidator currencyValidator)
+        public SubmitTransactionHandler(CurrencyValidator currencyValidator, ITransactionRepository transactionRepository)
         {
             ArgumentNullException.ThrowIfNull(currencyValidator);
+            ArgumentNullException.ThrowIfNull(transactionRepository);
 
             _currencyValidator = currencyValidator;
+            _transactionRepository = transactionRepository;
         }
 
         public async Task<ApplicationResult<SubmitTransactionResult>> HandleAsync(SubmitTransactionCommand command, CancellationToken cancellationToken = default)
@@ -48,7 +53,6 @@ namespace Enterprise.TransactionPlatform.Application.Transactions.Submit
             }
 
             var currencyValidation = await _currencyValidator.ValidateAsync(currency, cancellationToken);
-
             if (!currencyValidation.IsValid)
             {
                 return ApplicationResult<SubmitTransactionResult>.Failure(
@@ -83,6 +87,8 @@ namespace Enterprise.TransactionPlatform.Application.Transactions.Submit
                     "TRANSACTION.INVALID_REQUEST",
                     exception.Message);
             }
+
+            await _transactionRepository.AddAsync(transaction, cancellationToken);
 
             var result = new SubmitTransactionResult(
                 transaction.TransactionId,

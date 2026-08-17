@@ -1,0 +1,9 @@
+﻿using Enterprise.TransactionPlatform.Domain.Entities;
+
+namespace Enterprise.TransactionPlatform.Application.Abstractions.Persistence
+{
+    public interface ITransactionRepository
+    {
+        Task AddAsync(Transaction transaction, CancellationToken cancellationToken = default);
+    }
+}

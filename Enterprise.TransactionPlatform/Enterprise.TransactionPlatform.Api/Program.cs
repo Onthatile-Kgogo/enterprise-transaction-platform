@@ -24,14 +24,10 @@ namespace Enterprise.TransactionPlatform.Api
                     "All supported currencies must contain exactly 3 letters.")
                 .ValidateOnStart();
 
-            builder.Services.AddControllers();
             builder.Services.AddOpenApi();
-
+            builder.Services.AddControllers();
             builder.Services.AddApplication();
             builder.Services.AddInfrastructure(builder.Configuration);
-
-
-
             builder.Services.AddSingleton<ISupportedCurrencyProvider, SupportedCurrencyProvider>();
 
             var app = builder.Build();
@@ -39,15 +35,17 @@ namespace Enterprise.TransactionPlatform.Api
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
+                app.UseSwaggerUI(options =>
+                {
+                    options.SwaggerEndpoint(
+                        "/openapi/v1.json",
+                        "Enterprise Transaction Platform API v1");
+                });
             }
 
             app.UseHttpsRedirection();
-
             app.UseAuthorization();
-
-
             app.MapControllers();
-
             app.Run();
         }
     }
