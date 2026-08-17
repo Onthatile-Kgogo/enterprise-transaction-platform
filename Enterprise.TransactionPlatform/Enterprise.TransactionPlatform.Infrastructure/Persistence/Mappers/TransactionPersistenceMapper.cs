@@ -1,4 +1,5 @@
 ﻿using Enterprise.TransactionPlatform.Domain.Entities;
+using Enterprise.TransactionPlatform.Domain.Enums;
 using Enterprise.TransactionPlatform.Infrastructure.Persistence.Models;
 
 namespace Enterprise.TransactionPlatform.Infrastructure.Persistence.Mappers
@@ -21,6 +22,30 @@ namespace Enterprise.TransactionPlatform.Infrastructure.Persistence.Mappers
                 CreatedAtUtc = transaction.CreatedAtUtc,
                 UpdatedAtUtc = transaction.UpdatedAtUtc
             };
+        }
+
+        public static Transaction ToDomain(TransactionRecord record)
+        {
+            ArgumentNullException.ThrowIfNull(record);
+
+            var type = Enum.Parse<TransactionType>(
+                record.Type,
+                ignoreCase: true);
+
+            var status = Enum.Parse<TransactionStatus>(
+                record.Status,
+                ignoreCase: true);
+
+            return Transaction.Rehydrate(
+                transactionId: record.TransactionId,
+                reference: record.Reference,
+                amount: record.Amount,
+                currency: record.Currency,
+                type: type,
+                status: status,
+                description: record.Description,
+                createdAtUtc: record.CreatedAtUtc,
+                updatedAtUtc: record.UpdatedAtUtc);
         }
     }
 }

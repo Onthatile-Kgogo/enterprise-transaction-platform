@@ -53,6 +53,21 @@ namespace Enterprise.TransactionPlatform.Domain.Entities
                 description?.Trim());
         }
 
+        public static Transaction Rehydrate(Guid transactionId, string reference, decimal amount, string currency, TransactionType type, TransactionStatus status, string? description, DateTime createdAtUtc, DateTime? updatedAtUtc)
+        {
+            var transactionReference = TransactionReference.Create(reference);
+            var transactionCurrency = Currency.Create(currency);
+
+            var money = Money.Create(amount, transactionCurrency);
+            var transaction = new Transaction(transactionId, transactionReference, money, type, description);
+
+            transaction.Status = status;
+            transaction.CreatedAtUtc = createdAtUtc;
+            transaction.UpdatedAtUtc = updatedAtUtc;
+
+            return transaction;
+        }
+
         public void MarkPending()
         {
             EnsureStatus(TransactionStatus.Received);
