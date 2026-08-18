@@ -55,6 +55,13 @@ namespace Enterprise.TransactionPlatform.Domain.Entities
 
         public static Transaction Rehydrate(Guid transactionId, string reference, decimal amount, string currency, TransactionType type, TransactionStatus status, string? description, DateTime createdAtUtc, DateTime? updatedAtUtc)
         {
+            if (!Enum.IsDefined(type))
+                throw new ArgumentOutOfRangeException(nameof(type), "Transaction type is invalid.");
+
+            if (!Enum.IsDefined(status))
+                throw new ArgumentOutOfRangeException(nameof(status), "Transaction status is invalid.");
+
+
             var transactionReference = TransactionReference.Create(reference);
             var transactionCurrency = Currency.Create(currency);
 

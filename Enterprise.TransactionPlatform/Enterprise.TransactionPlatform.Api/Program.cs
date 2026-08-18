@@ -1,3 +1,4 @@
+using Enterprise.TransactionPlatform.Api.Infrastructure.Exceptions;
 using Enterprise.TransactionPlatform.Application.Abstractions.Currencies;
 using Enterprise.TransactionPlatform.Application.DependencyInjection;
 using Enterprise.TransactionPlatform.Infrastructure.Currencies;
@@ -30,6 +31,9 @@ namespace Enterprise.TransactionPlatform.Api
             builder.Services.AddInfrastructure(builder.Configuration);
             builder.Services.AddSingleton<ISupportedCurrencyProvider, SupportedCurrencyProvider>();
 
+            builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+            builder.Services.AddProblemDetails();
+
             var app = builder.Build();
 
             if (app.Environment.IsDevelopment())
@@ -45,6 +49,7 @@ namespace Enterprise.TransactionPlatform.Api
 
             app.UseHttpsRedirection();
             app.UseAuthorization();
+            app.UseExceptionHandler();
             app.MapControllers();
             app.Run();
         }

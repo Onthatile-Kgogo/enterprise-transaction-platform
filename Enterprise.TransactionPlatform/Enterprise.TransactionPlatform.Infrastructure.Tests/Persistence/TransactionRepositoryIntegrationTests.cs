@@ -1,7 +1,5 @@
 ﻿using Dapper;
 using Enterprise.TransactionPlatform.Application.Abstractions.Persistence;
-using Enterprise.TransactionPlatform.Application.Transactions.GetById;
-using Enterprise.TransactionPlatform.Application.Transactions.GetByReference;
 using Enterprise.TransactionPlatform.Domain.Entities;
 using Enterprise.TransactionPlatform.Domain.Enums;
 using Enterprise.TransactionPlatform.Domain.ValueObjects;
@@ -38,7 +36,11 @@ namespace Enterprise.TransactionPlatform.Infrastructure.Tests.Persistence
             var currency = Currency.Create("ZAR");
             var money = Money.Create(1500.00m, currency);
 
-            var transaction = Transaction.Create(reference, money, TransactionType.Payment, "Infrastructure integration test");
+            var transaction = Transaction.Create(
+                reference,
+                money,
+                TransactionType.Payment,
+                "Infrastructure integration test");
 
             try
             {
@@ -104,10 +106,10 @@ namespace Enterprise.TransactionPlatform.Infrastructure.Tests.Persistence
         {
             // Arrange
             var configuration = new ConfigurationBuilder()
-                 .AddInMemoryCollection(new Dictionary<string, string?>
-                 {
-                     ["ConnectionStrings:EnterpriseTransactionPlatform"] = ConnectionString
-                 })
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:EnterpriseTransactionPlatform"] = ConnectionString
+                })
                 .Build();
 
             var services = new ServiceCollection();
@@ -121,7 +123,11 @@ namespace Enterprise.TransactionPlatform.Infrastructure.Tests.Persistence
             var currency = Currency.Create("ZAR");
             var money = Money.Create(100m, currency);
 
-            var transaction = Transaction.Create(reference, money, TransactionType.Payment, "Query test transaction");
+            var transaction = Transaction.Create(
+                reference,
+                money,
+                TransactionType.Payment,
+                "Query test transaction");
 
             try
             {
@@ -264,6 +270,70 @@ namespace Enterprise.TransactionPlatform.Infrastructure.Tests.Persistence
 
             // Assert
             Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task UpdateStatusAsync_WhenStatusChanges_ShouldPersistUpdatedStatus()
+        {
+            // Arrange
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:EnterpriseTransactionPlatform"] = ConnectionString
+                })
+                .Build();
+
+            var services = new ServiceCollection();
+            services.AddInfrastructure(configuration);
+
+            await using var serviceProvider = services.BuildServiceProvider();
+            var repository = serviceProvider.GetRequiredService<ITransactionRepository>();
+
+            var reference = TransactionReference.Create($"TXN-STATUS-{Guid.NewGuid():N}");
+            var currency = Currency.Create("ZAR");
+            var money = Money.Create(100m, currency);
+            var transaction = Transaction.Create(reference, money, TransactionType.Payment, "Infrastructure status update test");
+
+            try
+            {
+                await repository.AddAsync(transaction, CancellationToken.None);
+
+                transaction.MarkPending();
+
+                var expectedUpdatedAtUtc = transaction.UpdatedAtUtc;
+
+                // Act
+                await repository.UpdateStatusAsync(transaction, CancellationToken.None);
+
+                var persistedTransaction = await repository.GetByIdAsync(transaction.TransactionId, CancellationToken.None);
+
+                // Assert
+                Assert.NotNull(persistedTransaction);
+                Assert.Equal(transaction.TransactionId, persistedTransaction.TransactionId);
+                Assert.Equal(TransactionStatus.Pending, persistedTransaction.Status);
+                Assert.NotNull(expectedUpdatedAtUtc);
+                Assert.NotNull(persistedTransaction.UpdatedAtUtc);
+                var difference = Math.Abs((persistedTransaction.UpdatedAtUtc.Value - expectedUpdatedAtUtc.Value).TotalMilliseconds);
+                Assert.True(difference < 5, $"Expected UpdatedAtUtc to be within 5ms. Difference was {difference}ms.");
+            }
+            finally
+            {
+                await using var cleanupConnection = new SqlConnection(ConnectionString);
+                await cleanupConnection.OpenAsync();
+
+                const string deleteSql =
+                    """
+                        DELETE FROM dbo.Transactions
+                        WHERE TransactionId = @TransactionId;
+                    """;
+
+                await cleanupConnection.ExecuteAsync(
+                    deleteSql,
+                    new
+                    {
+                        transaction.TransactionId
+                    });
+            }
         }
 
         private sealed class TransactionRow

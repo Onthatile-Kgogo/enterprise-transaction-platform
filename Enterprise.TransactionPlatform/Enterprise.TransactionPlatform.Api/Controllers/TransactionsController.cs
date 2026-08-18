@@ -1,6 +1,8 @@
-﻿using Enterprise.TransactionPlatform.Application.Transactions.GetById;
+﻿using Enterprise.TransactionPlatform.Api.Contracts.Transactions;
+using Enterprise.TransactionPlatform.Application.Transactions.GetById;
 using Enterprise.TransactionPlatform.Application.Transactions.GetByReference;
 using Enterprise.TransactionPlatform.Application.Transactions.Submit;
+using Enterprise.TransactionPlatform.Application.Transactions.UpdateStatus;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Enterprise.TransactionPlatform.Api.Controllers
@@ -12,16 +14,19 @@ namespace Enterprise.TransactionPlatform.Api.Controllers
         private readonly SubmitTransactionHandler submitHandler;
         private readonly GetTransactionByIdHandler idHandler;
         private readonly GetTransactionByReferenceHandler referenceHandler;
+        private readonly UpdateTransactionStatusHandler updateStatusHandler;
 
-        public TransactionsController(SubmitTransactionHandler submitHandler, GetTransactionByIdHandler idHandler, GetTransactionByReferenceHandler referenceHandler)
+        public TransactionsController(SubmitTransactionHandler submitHandler, GetTransactionByIdHandler idHandler, GetTransactionByReferenceHandler referenceHandler, UpdateTransactionStatusHandler updateStatusHandler)
         {
             ArgumentNullException.ThrowIfNull(submitHandler);
             ArgumentNullException.ThrowIfNull(idHandler);
             ArgumentNullException.ThrowIfNull(referenceHandler);
+            ArgumentNullException.ThrowIfNull(updateStatusHandler);
 
             this.submitHandler = submitHandler;
             this.idHandler = idHandler;
             this.referenceHandler = referenceHandler;
+            this.updateStatusHandler = updateStatusHandler;
         }
 
         [HttpPost]
@@ -55,6 +60,20 @@ namespace Enterprise.TransactionPlatform.Api.Controllers
 
             if (result is null)
                 return NotFound();
+
+            return Ok(result);
+        }
+
+        [HttpPatch("{transactionId:guid}/status")]
+        [ProducesResponseType(typeof(UpdateTransactionStatusResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> UpdateStatusAsync(Guid transactionId, [FromBody] UpdateTransactionStatusRequest request, CancellationToken cancellationToken)
+        {
+            var command = new UpdateTransactionStatusCommand(transactionId, request.Status);
+            var result = await updateStatusHandler.HandleAsync(command, cancellationToken);
 
             return Ok(result);
         }
