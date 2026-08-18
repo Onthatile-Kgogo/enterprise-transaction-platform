@@ -1,4 +1,6 @@
 ﻿using Enterprise.TransactionPlatform.Application.Abstractions.Persistence;
+using Enterprise.TransactionPlatform.Application.Common;
+using Enterprise.TransactionPlatform.Application.Transactions.Search;
 using Enterprise.TransactionPlatform.Application.Transactions.UpdateStatus;
 using Enterprise.TransactionPlatform.Domain.Entities;
 using Enterprise.TransactionPlatform.Domain.Enums;
@@ -93,6 +95,11 @@ namespace Enterprise.TransactionPlatform.Application.Tests.Transactions.UpdateSt
             {
                 UpdateCalled = true;
                 return Task.CompletedTask;
+            }
+
+            public Task<PagedResult<Transaction>> SearchAsync(TransactionSearchCriteria criteria, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(new PagedResult<Transaction>(Array.Empty<Transaction>(), 0));
             }
         }
     }

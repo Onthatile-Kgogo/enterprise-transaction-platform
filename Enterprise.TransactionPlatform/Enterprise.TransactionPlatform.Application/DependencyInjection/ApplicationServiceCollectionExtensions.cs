@@ -18,6 +18,7 @@ namespace Enterprise.TransactionPlatform.Application.DependencyInjection
             services.AddScoped<GetTransactionByIdHandler>();
             services.AddScoped<GetTransactionByReferenceHandler>();
             services.AddScoped<UpdateTransactionStatusHandler>();
+            services.AddScoped<SearchTransactionsHandler>();
 
             return services;
         }
