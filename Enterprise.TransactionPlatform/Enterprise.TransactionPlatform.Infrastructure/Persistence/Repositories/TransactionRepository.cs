@@ -92,4 +92,27 @@ internal sealed class TransactionRepository : ITransactionRepository
             ? null
             : TransactionPersistenceMapper.ToDomain(record);
     }
+
+    public async Task UpdateStatusAsync(Transaction transaction, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(transaction);
+
+        var record = TransactionPersistenceMapper.ToRecord(transaction);
+
+        await using var connection = _connectionFactory.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+
+        var command = new CommandDefinition(
+            commandText: "dbo.sp_UpdateTransactionStatus",
+            parameters: new
+            {
+                record.TransactionId,
+                record.Status,
+                record.UpdatedAtUtc
+            },
+            commandType: CommandType.StoredProcedure,
+            cancellationToken: cancellationToken);
+
+        await connection.ExecuteAsync(command);
+    }
 }

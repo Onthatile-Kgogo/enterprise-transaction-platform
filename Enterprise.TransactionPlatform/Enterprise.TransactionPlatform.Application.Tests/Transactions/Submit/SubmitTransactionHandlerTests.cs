@@ -222,6 +222,10 @@ namespace Enterprise.TransactionPlatform.Application.Tests.Transactions.Submit
             {
                 return Task.FromResult<Transaction?>(null);
             }
+            public Task UpdateStatusAsync(Transaction transaction, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
+            }
         }
     }
 }

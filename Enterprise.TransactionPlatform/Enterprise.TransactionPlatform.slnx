@@ -6,6 +6,7 @@
     <File Path="sp_CreateTransaction.sql" />
     <File Path="sp_GetTransactionById.sql" />
     <File Path="sp_GetTransactionByReference.sql" />
+    <File Path="sp_UpdateTransactionStatus.sql" />
   </Folder>
   <Folder Name="/database/Tables/">
     <File Path="Transactions.sql" />

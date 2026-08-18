@@ -69,6 +69,11 @@ namespace Enterprise.TransactionPlatform.Application.Tests.Transactions.GetByRef
 
                 return Task.FromResult(result);
             }
+
+            public Task UpdateStatusAsync(Transaction transaction, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
+            }
         }
     }
 }
