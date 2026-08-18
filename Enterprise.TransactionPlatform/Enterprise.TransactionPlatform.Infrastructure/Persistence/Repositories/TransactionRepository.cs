@@ -1,9 +1,12 @@
 ﻿using Dapper;
 using Enterprise.TransactionPlatform.Application.Abstractions.Persistence;
+using Enterprise.TransactionPlatform.Application.Common;
+using Enterprise.TransactionPlatform.Application.Transactions.Search;
 using Enterprise.TransactionPlatform.Domain.Entities;
 using Enterprise.TransactionPlatform.Infrastructure.Persistence.Abstractions;
 using Enterprise.TransactionPlatform.Infrastructure.Persistence.Mappers;
 using Enterprise.TransactionPlatform.Infrastructure.Persistence.Models;
+using Microsoft.Data.SqlClient;
 using System.Data;
 
 namespace Enterprise.TransactionPlatform.Infrastructure.Persistence.Repositories;
@@ -46,7 +49,6 @@ internal sealed class TransactionRepository : ITransactionRepository
 
         await connection.ExecuteAsync(command);
     }
-
     public async Task<Transaction?> GetByIdAsync(Guid transactionId, CancellationToken cancellationToken = default)
     {
         await using var connection = _connectionFactory.CreateConnection();
@@ -69,7 +71,6 @@ internal sealed class TransactionRepository : ITransactionRepository
             ? null
             : TransactionPersistenceMapper.ToDomain(record);
     }
-
     public async Task<Transaction?> GetByReferenceAsync(string reference, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(reference);
@@ -92,7 +93,6 @@ internal sealed class TransactionRepository : ITransactionRepository
             ? null
             : TransactionPersistenceMapper.ToDomain(record);
     }
-
     public async Task UpdateStatusAsync(Transaction transaction, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(transaction);
@@ -114,5 +114,40 @@ internal sealed class TransactionRepository : ITransactionRepository
             cancellationToken: cancellationToken);
 
         await connection.ExecuteAsync(command);
+    }
+    public async Task<PagedResult<Transaction>> SearchAsync(TransactionSearchCriteria criteria, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(criteria);
+
+        await using var connection = _connectionFactory.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+
+        var command = new CommandDefinition(
+            commandText: "dbo.sp_SearchTransactions",
+            parameters: new
+            {
+                criteria.Reference,
+                Status = criteria.Status?.ToString(),
+                Type = criteria.Type?.ToString(),
+                criteria.Currency,
+                criteria.FromDateUtc,
+                criteria.ToDateUtc,
+                criteria.PageNumber,
+                criteria.PageSize
+            },
+            commandType: CommandType.StoredProcedure,
+            cancellationToken: cancellationToken);
+
+        using var multi = await connection.QueryMultipleAsync(command);
+
+        var totalRecords = await multi.ReadSingleAsync<int>();
+        var records = (await multi.ReadAsync<TransactionRecord>())
+            .ToArray();
+
+        var transactions = records
+            .Select(TransactionPersistenceMapper.ToDomain)
+            .ToArray();
+
+        return new PagedResult<Transaction>(transactions, totalRecords);
     }
 }

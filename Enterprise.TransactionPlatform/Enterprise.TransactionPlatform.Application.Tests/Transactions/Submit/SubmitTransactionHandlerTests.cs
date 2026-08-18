@@ -1,9 +1,11 @@
 ﻿using Enterprise.TransactionPlatform.Application.Abstractions.Currencies;
-using Enterprise.TransactionPlatform.Application.Currencies;
-using Enterprise.TransactionPlatform.Application.Transactions.Submit;
-using Enterprise.TransactionPlatform.Domain.Enums;
 using Enterprise.TransactionPlatform.Application.Abstractions.Persistence;
+using Enterprise.TransactionPlatform.Application.Common;
+using Enterprise.TransactionPlatform.Application.Currencies;
+using Enterprise.TransactionPlatform.Application.Transactions.Search;
+using Enterprise.TransactionPlatform.Application.Transactions.Submit;
 using Enterprise.TransactionPlatform.Domain.Entities;
+using Enterprise.TransactionPlatform.Domain.Enums;
 
 namespace Enterprise.TransactionPlatform.Application.Tests.Transactions.Submit
 {
@@ -225,6 +227,10 @@ namespace Enterprise.TransactionPlatform.Application.Tests.Transactions.Submit
             public Task UpdateStatusAsync(Transaction transaction, CancellationToken cancellationToken = default)
             {
                 return Task.CompletedTask;
+            }
+            public Task<PagedResult<Transaction>> SearchAsync(TransactionSearchCriteria criteria, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(new PagedResult<Transaction>(Array.Empty<Transaction>(), 0));
             }
         }
     }

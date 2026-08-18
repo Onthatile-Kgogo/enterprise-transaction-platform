@@ -1,6 +1,7 @@
 ﻿using Enterprise.TransactionPlatform.Api.Contracts.Transactions;
 using Enterprise.TransactionPlatform.Application.Transactions.GetById;
 using Enterprise.TransactionPlatform.Application.Transactions.GetByReference;
+using Enterprise.TransactionPlatform.Application.Transactions.Search;
 using Enterprise.TransactionPlatform.Application.Transactions.Submit;
 using Enterprise.TransactionPlatform.Application.Transactions.UpdateStatus;
 using Microsoft.AspNetCore.Mvc;
@@ -15,8 +16,10 @@ namespace Enterprise.TransactionPlatform.Api.Controllers
         private readonly GetTransactionByIdHandler idHandler;
         private readonly GetTransactionByReferenceHandler referenceHandler;
         private readonly UpdateTransactionStatusHandler updateStatusHandler;
+        private readonly SearchTransactionsHandler searchHandler;
 
-        public TransactionsController(SubmitTransactionHandler submitHandler, GetTransactionByIdHandler idHandler, GetTransactionByReferenceHandler referenceHandler, UpdateTransactionStatusHandler updateStatusHandler)
+        public TransactionsController(SubmitTransactionHandler submitHandler, GetTransactionByIdHandler idHandler, GetTransactionByReferenceHandler referenceHandler,
+            UpdateTransactionStatusHandler updateStatusHandler, SearchTransactionsHandler searchHandler)
         {
             ArgumentNullException.ThrowIfNull(submitHandler);
             ArgumentNullException.ThrowIfNull(idHandler);
@@ -27,6 +30,7 @@ namespace Enterprise.TransactionPlatform.Api.Controllers
             this.idHandler = idHandler;
             this.referenceHandler = referenceHandler;
             this.updateStatusHandler = updateStatusHandler;
+            this.searchHandler = searchHandler;
         }
 
         [HttpPost]
@@ -76,6 +80,20 @@ namespace Enterprise.TransactionPlatform.Api.Controllers
             var result = await updateStatusHandler.HandleAsync(command, cancellationToken);
 
             return Ok(result);
+        }
+
+
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchAsync([FromQuery] SearchTransactionsQuery query, CancellationToken cancellationToken)
+        {
+            var result = await searchHandler.HandleAsync(query, cancellationToken);
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.Error);
+            }
+
+            return Ok(result.Value);
         }
     }
 }

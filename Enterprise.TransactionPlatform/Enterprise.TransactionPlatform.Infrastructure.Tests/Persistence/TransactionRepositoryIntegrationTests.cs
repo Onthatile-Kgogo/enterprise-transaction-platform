@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Enterprise.TransactionPlatform.Application.Abstractions.Persistence;
+using Enterprise.TransactionPlatform.Application.Transactions.Search;
 using Enterprise.TransactionPlatform.Domain.Entities;
 using Enterprise.TransactionPlatform.Domain.Enums;
 using Enterprise.TransactionPlatform.Domain.ValueObjects;
@@ -334,6 +335,164 @@ namespace Enterprise.TransactionPlatform.Infrastructure.Tests.Persistence
                         transaction.TransactionId
                     });
             }
+        }
+
+        [Fact]
+        public async Task SearchAsync_WithNoFilters_ShouldReturnPagedTransactions()
+        {
+            // Arrange
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:EnterpriseTransactionPlatform"] =
+                        ConnectionString
+                })
+                .Build();
+
+            var services = new ServiceCollection();
+            services.AddInfrastructure(configuration);
+
+            await using var serviceProvider = services.BuildServiceProvider();
+
+            var repository =
+                serviceProvider.GetRequiredService<ITransactionRepository>();
+
+            var criteria = new TransactionSearchCriteria(
+                Reference: null,
+                Status: null,
+                Type: null,
+                Currency: null,
+                FromDateUtc: null,
+                ToDateUtc: null,
+                PageNumber: 1,
+                PageSize: 10);
+
+            // Act
+            var result = await repository.SearchAsync(criteria);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.TotalRecords >= result.Items.Count);
+            Assert.True(result.Items.Count <= 10);
+        }
+
+        [Fact]
+        public async Task SearchAsync_WithReference_ShouldReturnMatchingTransaction()
+        {
+            // Arrange
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:EnterpriseTransactionPlatform"] =
+                        ConnectionString
+                })
+                .Build();
+
+            var services = new ServiceCollection();
+            services.AddInfrastructure(configuration);
+
+            await using var serviceProvider = services.BuildServiceProvider();
+
+            var repository =
+                serviceProvider.GetRequiredService<ITransactionRepository>();
+
+            var referenceValue = $"SEARCH-{Guid.NewGuid():N}";
+
+            var transaction = Transaction.Create(TransactionReference.Create(referenceValue),
+                Money.Create(
+                    250m,
+                    Currency.Create("ZAR")),
+                TransactionType.Payment,
+                "Search integration test");
+
+            try
+            {
+                await repository.AddAsync(transaction);
+
+                var criteria = new TransactionSearchCriteria(
+                    Reference: referenceValue,
+                    Status: null,
+                    Type: null,
+                    Currency: null,
+                    FromDateUtc: null,
+                    ToDateUtc: null,
+                    PageNumber: 1,
+                    PageSize: 10);
+
+                // Act
+                var result = await repository.SearchAsync(criteria);
+
+                // Assert
+                Assert.Equal(1, result.TotalRecords);
+
+                var found = Assert.Single(result.Items);
+
+                Assert.Equal(
+                    transaction.TransactionId,
+                    found.TransactionId);
+
+                Assert.Equal(
+                    referenceValue,
+                    found.Reference.Value);
+            }
+            finally
+            {
+                await using var cleanupConnection =
+                    new SqlConnection(ConnectionString);
+
+                await cleanupConnection.OpenAsync();
+
+                const string deleteSql =
+                """
+                    DELETE FROM dbo.Transactions
+                    WHERE TransactionId = @TransactionId;
+                """;
+
+                await cleanupConnection.ExecuteAsync(
+                    deleteSql,
+                    new
+                    {
+                        transaction.TransactionId
+                    });
+            }
+        }
+
+        [Fact]
+        public async Task SearchAsync_WithPageSize_ShouldRespectPagination()
+        {
+            // Arrange
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:EnterpriseTransactionPlatform"] =
+                        ConnectionString
+                })
+                .Build();
+
+            var services = new ServiceCollection();
+            services.AddInfrastructure(configuration);
+
+            await using var serviceProvider = services.BuildServiceProvider();
+
+            var repository =
+                serviceProvider.GetRequiredService<ITransactionRepository>();
+
+            var criteria = new TransactionSearchCriteria(
+                Reference: null,
+                Status: null,
+                Type: null,
+                Currency: null,
+                FromDateUtc: null,
+                ToDateUtc: null,
+                PageNumber: 1,
+                PageSize: 2);
+
+            // Act
+            var result = await repository.SearchAsync(criteria);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Items.Count <= 2);
         }
 
         private sealed class TransactionRow
