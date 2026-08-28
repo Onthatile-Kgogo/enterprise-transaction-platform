@@ -1,6 +1,7 @@
 ﻿using Enterprise.TransactionPlatform.Application.Abstractions.Currencies;
 using Enterprise.TransactionPlatform.Application.Abstractions.Persistence;
 using Enterprise.TransactionPlatform.Infrastructure.Currencies;
+using Enterprise.TransactionPlatform.Infrastructure.Health;
 using Enterprise.TransactionPlatform.Infrastructure.Persistence.Abstractions;
 using Enterprise.TransactionPlatform.Infrastructure.Persistence.Connections;
 using Enterprise.TransactionPlatform.Infrastructure.Persistence.Repositories;
@@ -20,7 +21,20 @@ namespace Enterprise.TransactionPlatform.Infrastructure.DependencyInjection
             if (string.IsNullOrWhiteSpace(connectionString))
                 throw new InvalidOperationException("Connection string 'EnterpriseTransactionPlatform' was not found.");
 
-            services.AddSingleton<IDbConnectionFactory>(new SqlConnectionFactory(connectionString));
+            services.AddSingleton<IDbConnectionFactory>(_ =>
+            {
+                var connectionString = configuration.GetConnectionString("EnterpriseTransactionPlatform");
+                if (string.IsNullOrWhiteSpace(connectionString))
+                {
+                    throw new InvalidOperationException("Connection string 'EnterpriseTransactionPlatform' was not found.");
+                }
+                return new SqlConnectionFactory(connectionString);
+            });
+            services.AddHealthChecks()
+                .AddCheck<SqlServerHealthCheck>(
+                    "sql-server",
+                    tags: new[] { "ready" }
+                );
 
             services
                 .AddOptions<CurrencyOptions>()
