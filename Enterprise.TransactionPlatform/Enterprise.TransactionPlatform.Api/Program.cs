@@ -3,6 +3,7 @@ using Enterprise.TransactionPlatform.Application.Abstractions.Currencies;
 using Enterprise.TransactionPlatform.Application.DependencyInjection;
 using Enterprise.TransactionPlatform.Infrastructure.Currencies;
 using Enterprise.TransactionPlatform.Infrastructure.DependencyInjection;
+using System.Threading.RateLimiting;
 
 namespace Enterprise.TransactionPlatform.Api
 {
@@ -11,6 +12,7 @@ namespace Enterprise.TransactionPlatform.Api
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
             builder.Services
                 .AddOptions<CurrencyOptions>()
                 .Bind(builder.Configuration.GetSection(CurrencyOptions.SectionName))
@@ -26,11 +28,32 @@ namespace Enterprise.TransactionPlatform.Api
                 .ValidateOnStart();
 
             builder.Services.AddOpenApi();
+
             builder.Services.AddControllers();
+
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.GlobalLimiter =
+                    PartitionedRateLimiter.Create<HttpContext, string>(
+                        httpContext =>
+                            RateLimitPartition.GetFixedWindowLimiter(
+                                partitionKey:
+                                    httpContext.Connection.RemoteIpAddress?.ToString()
+                                    ?? "unknown",
+                                factory: _ => new FixedWindowRateLimiterOptions
+                                {
+                                    PermitLimit = 100,
+                                    Window = TimeSpan.FromMinutes(1),
+                                    QueueLimit = 0
+                                }));
+
+                options.RejectionStatusCode =
+                    StatusCodes.Status429TooManyRequests;
+            });
+
             builder.Services.AddApplication();
             builder.Services.AddInfrastructure(builder.Configuration);
             builder.Services.AddSingleton<ISupportedCurrencyProvider, SupportedCurrencyProvider>();
-
             builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
             builder.Services.AddProblemDetails();
 
@@ -39,6 +62,7 @@ namespace Enterprise.TransactionPlatform.Api
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
+
                 app.UseSwaggerUI(options =>
                 {
                     options.SwaggerEndpoint(
@@ -46,10 +70,15 @@ namespace Enterprise.TransactionPlatform.Api
                         "Enterprise Transaction Platform API v1");
                 });
             }
+            else
+            {
+                app.UseHsts();
+            }
 
+            app.UseExceptionHandler();
+            app.UseRateLimiter();
             app.UseHttpsRedirection();
             app.UseAuthorization();
-            app.UseExceptionHandler();
             app.MapControllers();
             app.Run();
         }

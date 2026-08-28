@@ -6,6 +6,11 @@ namespace Enterprise.TransactionPlatform.Api.Infrastructure.Exceptions
 {
     public sealed class GlobalExceptionHandler : IExceptionHandler
     {
+        private readonly ILogger<GlobalExceptionHandler> logger;
+        public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
+        {
+            this.logger = logger;
+        }
         public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
         {
             var problemDetails = exception switch
@@ -38,18 +43,25 @@ namespace Enterprise.TransactionPlatform.Api.Infrastructure.Exceptions
                     Detail = exception.Message
                 },
 
-                _ => new ProblemDetails
-                {
-                    Status = StatusCodes.Status500InternalServerError,
-                    Title = "An unexpected error occurred",
-                    Detail = "An unexpected error occurred while processing the request."
-                }
+                _ => LogAndCreateInternalServerError(exception)
             };
 
-            httpContext.Response.StatusCode = problemDetails.Status!.Value;
+            problemDetails.Extensions["traceId"] = httpContext.TraceIdentifier;
+            httpContext.Response.StatusCode = problemDetails.Status ?? StatusCodes.Status500InternalServerError;
+            await httpContext.Response.WriteAsJsonAsync(problemDetails, options: null, contentType: "application/problem+json", cancellationToken);
 
-            await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
             return true;
+        }
+
+        private ProblemDetails LogAndCreateInternalServerError(Exception exception)
+        {
+            logger.LogError(exception, "An unhandled exception occurred while processing the request.");
+            return new ProblemDetails
+            {
+                Status = StatusCodes.Status500InternalServerError,
+                Title = "An unexpected error occurred",
+                Detail = "An unexpected error occurred while processing the request."
+            };
         }
     }
 }

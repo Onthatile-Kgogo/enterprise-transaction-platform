@@ -1,5 +1,4 @@
 ﻿using Enterprise.TransactionPlatform.Application.Abstractions.Persistence;
-using Enterprise.TransactionPlatform.Domain.Entities;
 using Enterprise.TransactionPlatform.Domain.Enums;
 
 namespace Enterprise.TransactionPlatform.Application.Transactions.UpdateStatus
