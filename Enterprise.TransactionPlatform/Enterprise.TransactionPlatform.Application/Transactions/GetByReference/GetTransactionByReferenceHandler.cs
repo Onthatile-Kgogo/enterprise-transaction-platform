@@ -1,8 +1,5 @@
 ﻿using Enterprise.TransactionPlatform.Application.Abstractions.Persistence;
 using Enterprise.TransactionPlatform.Application.Transactions.GetById;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Enterprise.TransactionPlatform.Application.Transactions.GetByReference
 {
