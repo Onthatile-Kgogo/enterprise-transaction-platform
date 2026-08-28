@@ -3,6 +3,7 @@ using Enterprise.TransactionPlatform.Application.Abstractions.Currencies;
 using Enterprise.TransactionPlatform.Application.DependencyInjection;
 using Enterprise.TransactionPlatform.Infrastructure.Currencies;
 using Enterprise.TransactionPlatform.Infrastructure.DependencyInjection;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using System.Threading.RateLimiting;
 
 namespace Enterprise.TransactionPlatform.Api
@@ -28,9 +29,7 @@ namespace Enterprise.TransactionPlatform.Api
                 .ValidateOnStart();
 
             builder.Services.AddOpenApi();
-
             builder.Services.AddControllers();
-
             builder.Services.AddRateLimiter(options =>
             {
                 options.GlobalLimiter =
@@ -50,10 +49,8 @@ namespace Enterprise.TransactionPlatform.Api
                 options.RejectionStatusCode =
                     StatusCodes.Status429TooManyRequests;
             });
-
             builder.Services.AddApplication();
             builder.Services.AddInfrastructure(builder.Configuration);
-            builder.Services.AddSingleton<ISupportedCurrencyProvider, SupportedCurrencyProvider>();
             builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
             builder.Services.AddProblemDetails();
 
@@ -79,6 +76,8 @@ namespace Enterprise.TransactionPlatform.Api
             app.UseRateLimiter();
             app.UseHttpsRedirection();
             app.UseAuthorization();
+            app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
+            app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
             app.MapControllers();
             app.Run();
         }
