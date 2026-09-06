@@ -1,5 +1,6 @@
 using Enterprise.TransactionPlatform.Api.Configuration;
 using Enterprise.TransactionPlatform.Api.Infrastructure.Exceptions;
+using Enterprise.TransactionPlatform.Api.Infrastructure.Middleware;
 using Enterprise.TransactionPlatform.Application.DependencyInjection;
 using Enterprise.TransactionPlatform.Infrastructure.Currencies;
 using Enterprise.TransactionPlatform.Infrastructure.DependencyInjection;
@@ -76,6 +77,7 @@ namespace Enterprise.TransactionPlatform.Api
             }
 
             app.UseExceptionHandler();
+            app.UseMiddleware<CorrelationIdMiddleware>();
             app.UseRateLimiter();
             app.UseHttpsRedirection();
             app.UseAuthorization();
@@ -85,7 +87,6 @@ namespace Enterprise.TransactionPlatform.Api
                 {
                     Predicate = _ => false
                 });
-
             app.MapHealthChecks("/health/ready",
                 new HealthCheckOptions
                 {
