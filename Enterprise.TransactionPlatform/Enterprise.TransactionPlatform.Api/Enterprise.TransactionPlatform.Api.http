@@ -1,6 +1,12 @@
 @Enterprise.TransactionPlatform.Api_HostAddress = http://localhost:5290
 
-GET {{Enterprise.TransactionPlatform.Api_HostAddress}}/weatherforecast/
+GET {{Enterprise.TransactionPlatform.Api_HostAddress}}/health/live
+Accept: application/json
+###
+
+
+
+GET {{Enterprise.TransactionPlatform.Api_HostAddress}}/health/ready
 Accept: application/json
 
 ###
