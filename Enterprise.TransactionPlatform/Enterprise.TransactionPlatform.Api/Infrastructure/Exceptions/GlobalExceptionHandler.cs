@@ -1,4 +1,5 @@
-﻿using Enterprise.TransactionPlatform.Domain.Exceptions;
+﻿using Enterprise.TransactionPlatform.Api.Infrastructure.Middleware;
+using Enterprise.TransactionPlatform.Domain.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,6 +12,7 @@ namespace Enterprise.TransactionPlatform.Api.Infrastructure.Exceptions
         {
             this.logger = logger;
         }
+
         public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
         {
             var problemDetails = exception switch
@@ -47,8 +49,15 @@ namespace Enterprise.TransactionPlatform.Api.Infrastructure.Exceptions
             };
 
             problemDetails.Extensions["traceId"] = httpContext.TraceIdentifier;
+            problemDetails.Extensions["correlationId"] = httpContext.Items[CorrelationIdMiddleware.ItemKey]?.ToString();
+
             httpContext.Response.StatusCode = problemDetails.Status ?? StatusCodes.Status500InternalServerError;
-            await httpContext.Response.WriteAsJsonAsync(problemDetails, options: null, contentType: "application/problem+json", cancellationToken);
+
+            await httpContext.Response.WriteAsJsonAsync(
+                problemDetails,
+                options: null,
+                contentType: "application/problem+json",
+                cancellationToken);
 
             return true;
         }
