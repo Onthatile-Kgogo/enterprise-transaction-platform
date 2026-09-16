@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Build.props" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Enterprise.Observability.AspNetCore/Enterprise.Observability.AspNetCore.csproj" />
+    <Project Path="src/Enterprise.Observability.Core/Enterprise.Observability.Core.csproj" />
+    <Project Path="src/Enterprise.Observability.Logging/Enterprise.Observability.Logging.csproj" />
+    <Project Path="src/Enterprise.Observability.Metrics/Enterprise.Observability.Metrics.csproj" />
+    <Project Path="src/Enterprise.Observability.Tracing/Enterprise.Observability.Tracing.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Enterprise.Observability.AspNetCore.Tests/Enterprise.Observability.AspNetCore.Tests.csproj" />
+    <Project Path="tests/Enterprise.Observability.Core.Tests/Enterprise.Observability.Core.Tests.csproj" />
+    <Project Path="tests/Enterprise.Observability.Logging.Tests/Enterprise.Observability.Logging.Tests.csproj" />
+    <Project Path="tests/Enterprise.Observability.Metrics.Tests/Enterprise.Observability.Metrics.Tests.csproj" />
+    <Project Path="tests/Enterprise.Observability.Tracing.Tests/Enterprise.Observability.Tracing.Tests.csproj" />
+  </Folder>
+</Solution>
