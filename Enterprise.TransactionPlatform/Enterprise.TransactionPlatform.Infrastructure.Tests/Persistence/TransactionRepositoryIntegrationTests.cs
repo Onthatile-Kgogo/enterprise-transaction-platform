@@ -13,7 +13,7 @@ namespace Enterprise.TransactionPlatform.Infrastructure.Tests.Persistence
 {
     public sealed class TransactionRepositoryIntegrationTests
     {
-        private const string ConnectionString = "Server=Onthatile_PC;Database=EnterpriseTransactionPlatform;Trusted_Connection=True;TrustServerCertificate=True;";
+        private const string ConnectionString = "Server=localhost;Database=EnterpriseTransactionPlatform;Trusted_Connection=True;TrustServerCertificate=True;";
 
         [Fact]
         public async Task AddAsync_WithValidTransaction_ShouldPersistTransaction()
